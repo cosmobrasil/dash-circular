@@ -11,14 +11,19 @@
   <header class="topbar">
     <div>
       <h1>Dashboard de Distrito Circular</h1>
-      <p class="subtitle">Painel consolidado da circularidade por setor, produto e território.</p>
+      <p class="subtitle">Painel consolidado da circularidade e preview do relatorio HTML gerado pelo formulario.</p>
     </div>
     <img src="./logo.png" alt="Logo CosmoBrasil" class="logo" />
   </header>
 
   <main class="container">
     <section class="panel filters-panel">
-      <h2>Filtros de análise</h2>
+      <div class="section-head">
+        <div>
+          <h2>Filtros e acesso ao relatorio</h2>
+          <p class="section-copy">Os filtros valem para os indicadores e para a lista de relatorios HTML recentes.</p>
+        </div>
+      </div>
       <div class="filters-grid">
         <label>Setor
           <select id="filtroSetor"><option value="">Todos</option></select>
@@ -32,7 +37,7 @@
         <label>UF
           <select id="filtroUf"><option value="">Todas</option></select>
         </label>
-        <label>Data início
+        <label>Data inicio
           <input id="filtroDataInicio" type="date" />
         </label>
         <label>Data fim
@@ -40,30 +45,36 @@
         </label>
       </div>
       <div class="actions-row">
-        <button id="btnAtualizar">Atualizar painel</button>
-        <label class="refresh-label"><input id="autoRefresh" type="checkbox" /> Atualização automática (60s)</label>
+        <div class="actions-group">
+          <button id="btnAtualizar">Atualizar painel</button>
+          <label class="refresh-label"><input id="autoRefresh" type="checkbox" /> Atualizacao automatica (60s)</label>
+        </div>
+        <label class="token-field">
+          <span>Token admin</span>
+          <input id="adminToken" type="password" placeholder="Opcional, se o backend exigir" />
+        </label>
       </div>
     </section>
 
     <section class="kpis-grid">
-      <article class="kpi panel"><h3>Total de formulários</h3><p id="kpiTotal">-</p></article>
-      <article class="kpi panel"><h3>Média total de pontos</h3><p id="kpiPontos">-</p></article>
-      <article class="kpi panel"><h3>Média IGC</h3><p id="kpiIGC">-</p></article>
-      <article class="kpi panel"><h3>Média IME</h3><p id="kpiIME">-</p></article>
+      <article class="kpi panel"><h3>Total de formularios</h3><p id="kpiTotal">-</p></article>
+      <article class="kpi panel"><h3>Media total de pontos</h3><p id="kpiPontos">-</p></article>
+      <article class="kpi panel"><h3>Media IGC</h3><p id="kpiIGC">-</p></article>
+      <article class="kpi panel"><h3>Media IME</h3><p id="kpiIME">-</p></article>
     </section>
 
     <section class="charts-grid">
       <article class="panel chart-panel">
-        <h3>Percentual de pontos por tópico</h3>
+        <h3>Percentual de pontos por topico</h3>
         <canvas id="chartTopicos"></canvas>
       </article>
 
       <article class="panel chart-panel">
-        <h3>Índice Global de Circularidade (IGC)</h3>
+        <h3>Indice Global de Circularidade (IGC)</h3>
         <canvas id="chartIGC"></canvas>
         <p class="tech-text">
-          O IGC sintetiza o quão circular é o modelo do produto, avaliando origem de matéria-prima,
-          gestão de resíduos, reciclagem, reparabilidade e reaproveitamento.
+          O IGC sintetiza o quao circular e o modelo do produto, avaliando origem de materia-prima,
+          gestao de residuos, reciclabilidade, reparabilidade e reaproveitamento.
         </p>
       </article>
 
@@ -71,29 +82,64 @@
         <h3>Perfil de Circularidade de Materiais</h3>
         <canvas id="chartIME"></canvas>
         <p class="tech-text">
-          Nota explicativa: Este radar representa o perfil de circularidade dos materiais utilizados pela empresa,
-          considerando tanto a origem e as características do material quanto seu destino ao final do ciclo de uso.
-          Materiais de fontes renováveis são aqueles capazes de se regenerar ao longo do tempo ou de origem animal/vegetal.
-          Quanto às características, “Virgem” é o material sem conteúdo reciclado; “Reciclado” contém material reciclado
-          pré e/ou pós-consumo; e “Reciclado permanentemente” é aquele que pode ser reciclado repetidas vezes sem perda de
-          propriedades originais (upcycling). No final do ciclo, os destinos indicam o que ocorre após o uso: “Aterro” quando
-          o material é enviado a aterros sanitários; “Reciclagem” quando segue para processos de reciclagem; e “Energia limpa”
-          quando é utilizado como substituto na geração de eletricidade e calor, reduzindo o uso de fontes tradicionais.
+          Esse radar representa o perfil de circularidade dos materiais utilizados pela empresa.
         </p>
       </article>
 
       <article class="panel chart-panel">
-        <h3>Índice de Circularidade do Produto</h3>
+        <h3>Indice de Circularidade do Produto</h3>
         <canvas id="chartCircularidadeProduto"></canvas>
         <p class="tech-text">
-          Visão dos cinco tópicos principais: Entrada, Gestão de Resíduos, Saída do Produto,
+          Visao dos cinco topicos principais: Entrada, Gestao de Residuos, Saida do Produto,
           Vida do Produto e Monitoramento.
         </p>
       </article>
     </section>
 
     <section class="panel">
-      <h3>Pontos Estratégicos de Atenção</h3>
+      <div class="section-head">
+        <div>
+          <h2>Relatorios HTML recentes</h2>
+          <p class="section-copy">
+            O dashboard puxa diretamente <code>questionarios.relatorio_html</code> do backend. O preview HTML so e carregado
+            quando voce clica em um relatorio, reduzindo requisicoes desnecessarias.
+          </p>
+        </div>
+        <div class="report-actions">
+          <button id="btnAtualizarRelatorios" class="secondary">Recarregar relatorios</button>
+          <a id="btnAbrirHtml" class="secondary link-button" href="#" target="_blank" rel="noopener noreferrer" hidden>Abrir HTML em nova aba</a>
+        </div>
+      </div>
+
+      <div class="reports-layout">
+        <aside class="reports-list-wrap">
+          <div id="reportStatus" class="status-box">Carregando relatorios...</div>
+          <div id="reportList" class="reports-list" hidden></div>
+        </aside>
+
+        <section class="report-preview">
+          <div class="report-preview-head">
+            <div>
+              <h3 id="reportTitle">Nenhum relatorio selecionado</h3>
+              <p id="reportMeta" class="report-meta">Selecione um registro na lista ao lado.</p>
+            </div>
+            <div class="report-badges">
+              <span id="reportBadgeHtml" class="badge badge-muted">HTML indisponivel</span>
+              <span id="reportBadgeIndex" class="badge badge-muted">-</span>
+            </div>
+          </div>
+          <iframe
+            id="reportFrame"
+            class="report-frame"
+            title="Preview do relatorio HTML"
+            sandbox="allow-forms allow-popups allow-same-origin"
+          ></iframe>
+        </section>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h3>Pontos estrategicos de atencao</h3>
       <div id="recomendacoes" class="recomendacoes-grid"></div>
     </section>
   </main>
