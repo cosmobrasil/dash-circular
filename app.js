@@ -22,7 +22,7 @@
     kpiTotal: document.getElementById('kpiTotal'),
     kpiPontos: document.getElementById('kpiPontos'),
     kpiIGC: document.getElementById('kpiIGC'),
-    kpiIME: document.getElementById('kpiIME'),
+    kpiPCM: document.getElementById('kpiPCM'),
     recomendacoes: document.getElementById('recomendacoes'),
     reportStatus: document.getElementById('reportStatus'),
     reportList: document.getElementById('reportList'),
@@ -233,15 +233,14 @@
     registerChartPlugins();
 
     const topicos = data.topicos || {};
-    const cosmobRaw = data.cosmobIndicadores || {};
-    const cosmob = {
-      fonteRenovavel: numeroSeguro(cosmobRaw.fonteRenovavel),
-      virgem: numeroSeguro(cosmobRaw.virgem),
-      reciclado: numeroSeguro(cosmobRaw.reciclado),
-      recicladoPermanentemente: numeroSeguro(cosmobRaw.recicladoPermanentemente),
-      aterro: numeroSeguro(cosmobRaw.aterro),
-      reciclagem: numeroSeguro(cosmobRaw.reciclagem),
-      valorizacaoEnergetica: numeroSeguro(cosmobRaw.valorizacaoEnergetica)
+    const pcmDimensoesRaw = data.pcmDimensoes || data.cosmobIndicadores || {};
+    const pcmDimensoes = {
+      durabilidade: numeroSeguro(pcmDimensoesRaw.durabilidade),
+      designReparavel: numeroSeguro(pcmDimensoesRaw.designReparavel),
+      designReaproveitamento: numeroSeguro(pcmDimensoesRaw.designReaproveitamento),
+      servicosCiclo: numeroSeguro(pcmDimensoesRaw.servicosCiclo),
+      rastreabilidade: numeroSeguro(pcmDimensoesRaw.rastreabilidade),
+      transparencia: numeroSeguro(pcmDimensoesRaw.transparencia)
     };
 
     destroyChart('topicos');
@@ -296,29 +295,27 @@
       }
     });
 
-    destroyChart('ime');
-    charts.ime = new Chart(document.getElementById('chartIME'), {
+    destroyChart('pcm');
+    charts.pcm = new Chart(document.getElementById('chartPCM'), {
       type: 'radar',
       data: {
         labels: [
-          'De fonte renovavel',
-          'Virgem',
-          'Reciclado',
-          'Reciclado permanentemente',
-          'Aterro',
-          'Reciclagem',
-          'Valorizacao energetica'
+          'Durabilidade',
+          'Design reparavel',
+          'Design de reaproveitamento',
+          'Servicos no ciclo',
+          'Rastreabilidade',
+          'Transparencia'
         ],
         datasets: [{
-          label: 'Indicadores estimados (%)',
+          label: 'Dimensoes do PCM (%)',
           data: [
-            cosmob.fonteRenovavel,
-            cosmob.virgem,
-            cosmob.reciclado,
-            cosmob.recicladoPermanentemente,
-            cosmob.aterro,
-            cosmob.reciclagem,
-            cosmob.valorizacaoEnergetica
+            pcmDimensoes.durabilidade,
+            pcmDimensoes.designReparavel,
+            pcmDimensoes.designReaproveitamento,
+            pcmDimensoes.servicosCiclo,
+            pcmDimensoes.rastreabilidade,
+            pcmDimensoes.transparencia
           ],
           backgroundColor: 'rgba(16, 185, 129, 0.22)',
           borderColor: '#10b981',
@@ -506,7 +503,7 @@
         <div class="report-card-actions">
           ${badge}
           <span class="mini-action">IGC ${Number(item.igc || 0).toFixed(1)}%</span>
-          <span class="mini-action">IME ${Number(item.ime || 0).toFixed(1)}%</span>
+          <span class="mini-action">PCM ${Number(item.pcm || 0).toFixed(1)}%</span>
         </div>
       `;
 
@@ -536,7 +533,7 @@
     el.reportBadgeHtml.className = `badge ${item.temHtml ? 'good' : 'warn'}`;
     el.reportBadgeHtml.textContent = item.temHtml ? 'HTML disponivel' : 'HTML indisponivel';
     el.reportBadgeIndex.className = 'badge good';
-    el.reportBadgeIndex.textContent = `IGC ${Number(item.igc || 0).toFixed(1)}% | IME ${Number(item.ime || 0).toFixed(1)}%`;
+    el.reportBadgeIndex.textContent = `IGC ${Number(item.igc || 0).toFixed(1)}% | PCM ${Number(item.pcm || 0).toFixed(1)}%`;
   }
 
   function setActiveReportCard(reportId) {
@@ -643,7 +640,7 @@
       el.kpiTotal.textContent = Number(data.totalFormularios || 0).toLocaleString('pt-BR');
       el.kpiPontos.textContent = Number(data.mediaTotalPontos || 0).toLocaleString('pt-BR', { maximumFractionDigits: 2 });
       el.kpiIGC.textContent = `${Number(data.mediaIGC || 0).toFixed(1)}%`;
-      el.kpiIME.textContent = `${Number(data.mediaIME || 0).toFixed(1)}%`;
+      el.kpiPCM.textContent = `${Number(data.mediaPCM || 0).toFixed(1)}%`;
 
       renderCharts(data);
       recomendacoesPorTopico(data.topicos || {});
@@ -654,9 +651,18 @@
   }
 
   async function atualizarTudo() {
-    await carregarFiltros();
     await atualizarDashboard();
-    await carregarRelatorios();
+
+    const resultados = await Promise.allSettled([
+      carregarFiltros(),
+      carregarRelatorios()
+    ]);
+
+    resultados.forEach((resultado) => {
+      if (resultado.status === 'rejected') {
+        console.warn('Falha ao atualizar parte do painel:', resultado.reason);
+      }
+    });
   }
 
   function configurarEventos() {
@@ -670,9 +676,11 @@
 
     [el.setor, el.produto, el.cidade, el.uf, el.dataInicio, el.dataFim].forEach((input) => {
       input.addEventListener('change', async () => {
-        await carregarFiltros();
         await atualizarDashboard();
-        await carregarRelatorios();
+        await Promise.allSettled([
+          carregarFiltros(),
+          carregarRelatorios()
+        ]);
       });
     });
 
