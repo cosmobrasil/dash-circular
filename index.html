@@ -97,48 +97,6 @@
     </section>
 
     <section class="panel">
-      <div class="section-head">
-        <div>
-          <h2>Relatorios HTML recentes</h2>
-          <p class="section-copy">
-            O dashboard puxa diretamente <code>questionarios.relatorio_html</code> do backend. O preview HTML so e carregado
-            quando voce clica em um relatorio, reduzindo requisicoes desnecessarias.
-          </p>
-        </div>
-        <div class="report-actions">
-          <button id="btnAtualizarRelatorios" class="secondary">Recarregar relatorios</button>
-          <a id="btnAbrirHtml" class="secondary link-button" href="#" target="_blank" rel="noopener noreferrer" hidden>Abrir HTML em nova aba</a>
-        </div>
-      </div>
-
-      <div class="reports-layout">
-        <aside class="reports-list-wrap">
-          <div id="reportStatus" class="status-box">Carregando relatorios...</div>
-          <div id="reportList" class="reports-list" hidden></div>
-        </aside>
-
-        <section class="report-preview">
-          <div class="report-preview-head">
-            <div>
-              <h3 id="reportTitle">Nenhum relatorio selecionado</h3>
-              <p id="reportMeta" class="report-meta">Selecione um registro na lista ao lado.</p>
-            </div>
-            <div class="report-badges">
-              <span id="reportBadgeHtml" class="badge badge-muted">HTML indisponivel</span>
-              <span id="reportBadgeIndex" class="badge badge-muted">-</span>
-            </div>
-          </div>
-          <iframe
-            id="reportFrame"
-            class="report-frame"
-            title="Preview do relatorio HTML"
-            sandbox="allow-forms allow-popups allow-same-origin"
-          ></iframe>
-        </section>
-      </div>
-    </section>
-
-    <section class="panel">
       <h3>Pontos estrategicos de atencao</h3>
       <div id="recomendacoes" class="recomendacoes-grid"></div>
     </section>

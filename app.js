@@ -1,9 +1,13 @@
 (function () {
+  const RAILWAY_API_BASE = 'https://formulario-production-8df7.up.railway.app';
   const isLocal = window.location.hostname.includes('localhost') || window.location.hostname === '127.0.0.1';
   const isNetlify = window.location.hostname.endsWith('netlify.app');
-  const API_BASE = isLocal
-    ? 'http://localhost:3000'
-    : (isNetlify ? '' : 'https://formulario-production-8df7.up.railway.app');
+  const apiBaseFromQuery = new URLSearchParams(window.location.search).get('apiBase');
+  const apiBaseFromStorage = window.localStorage.getItem('dashboardCircularidadeApiBase');
+  const isLocalBackendHost = isLocal && window.location.port === '3000';
+  const API_BASE = apiBaseFromQuery
+    || apiBaseFromStorage
+    || (isNetlify ? '' : (isLocalBackendHost ? '' : RAILWAY_API_BASE));
 
   const STORAGE_KEY = 'dashboardCircularidadeAdminToken';
 
@@ -15,31 +19,18 @@
     dataInicio: document.getElementById('filtroDataInicio'),
     dataFim: document.getElementById('filtroDataFim'),
     btnAtualizar: document.getElementById('btnAtualizar'),
-    btnAtualizarRelatorios: document.getElementById('btnAtualizarRelatorios'),
     autoRefresh: document.getElementById('autoRefresh'),
     adminToken: document.getElementById('adminToken'),
-    btnAbrirHtml: document.getElementById('btnAbrirHtml'),
     kpiTotal: document.getElementById('kpiTotal'),
     kpiPontos: document.getElementById('kpiPontos'),
     kpiIGC: document.getElementById('kpiIGC'),
     kpiPCM: document.getElementById('kpiPCM'),
-    recomendacoes: document.getElementById('recomendacoes'),
-    reportStatus: document.getElementById('reportStatus'),
-    reportList: document.getElementById('reportList'),
-    reportTitle: document.getElementById('reportTitle'),
-    reportMeta: document.getElementById('reportMeta'),
-    reportBadgeHtml: document.getElementById('reportBadgeHtml'),
-    reportBadgeIndex: document.getElementById('reportBadgeIndex'),
-    reportFrame: document.getElementById('reportFrame')
+    recomendacoes: document.getElementById('recomendacoes')
   };
 
   const charts = {};
   let refreshTimer = null;
   let chartPluginsRegistered = false;
-  let selectedReportId = null;
-  let currentReportBlobUrl = null;
-  let reportRecords = [];
-  const htmlCache = new Map();
 
   function getAdminToken() {
     return el.adminToken.value.trim();
@@ -456,180 +447,6 @@
       .join('');
   }
 
-  function setReportStatus(message, tone = '') {
-    el.reportStatus.hidden = false;
-    el.reportStatus.textContent = message;
-    el.reportStatus.className = `status-box${tone ? ` ${tone}` : ''}`;
-  }
-
-  function clearReportBlob() {
-    if (currentReportBlobUrl) {
-      URL.revokeObjectURL(currentReportBlobUrl);
-      currentReportBlobUrl = null;
-    }
-    el.btnAbrirHtml.hidden = true;
-    el.btnAbrirHtml.href = '#';
-  }
-
-  function renderReportList(items) {
-    reportRecords = items.slice();
-    if (!items.length) {
-      el.reportList.hidden = true;
-      setReportStatus('Nenhum relatorio encontrado para o recorte atual.', 'warn');
-      return;
-    }
-
-    el.reportList.hidden = false;
-    el.reportList.innerHTML = '';
-
-    items.forEach((item) => {
-      const card = document.createElement('article');
-      card.className = `report-card${String(item.id) === String(selectedReportId) ? ' active' : ''}`;
-      card.dataset.reportId = item.id;
-
-      const badge = item.temHtml
-        ? '<span class="mini-action good">HTML disponivel</span>'
-        : '<span class="mini-action">Sem HTML</span>';
-
-      card.innerHTML = `
-        <div class="report-card-head">
-          <div>
-            <h4>${item.nomeEmpresa || '-'}</h4>
-            <p>${item.nomeResponsavel || '-'}<br>${item.cidade || '-'}${item.uf ? `/${item.uf}` : ''}</p>
-          </div>
-          <span class="badge ${item.temHtml ? 'good' : 'warn'}">${item.dataHora || '-'}</span>
-        </div>
-        <p>${item.produto || '-'}</p>
-        <div class="report-card-actions">
-          ${badge}
-          <span class="mini-action">IGC ${Number(item.igc || 0).toFixed(1)}%</span>
-          <span class="mini-action">PCM ${Number(item.pcm || 0).toFixed(1)}%</span>
-        </div>
-      `;
-
-      card.addEventListener('click', () => {
-        abrirRelatorio(item.id);
-      });
-
-      el.reportList.appendChild(card);
-    });
-
-    el.reportStatus.hidden = true;
-  }
-
-  function updateReportHeader(item) {
-    if (!item) {
-      el.reportTitle.textContent = 'Nenhum relatorio selecionado';
-      el.reportMeta.textContent = 'Selecione um registro na lista ao lado.';
-      el.reportBadgeHtml.className = 'badge badge-muted';
-      el.reportBadgeHtml.textContent = 'HTML indisponivel';
-      el.reportBadgeIndex.className = 'badge badge-muted';
-      el.reportBadgeIndex.textContent = '-';
-      return;
-    }
-
-    el.reportTitle.textContent = item.nomeEmpresa || `Relatorio ${item.id}`;
-    el.reportMeta.textContent = `${item.nomeResponsavel || '-'} | ${item.cidade || '-'}${item.uf ? `/${item.uf}` : ''} | ${item.produto || '-'} | ${item.dataHora || '-'}`;
-    el.reportBadgeHtml.className = `badge ${item.temHtml ? 'good' : 'warn'}`;
-    el.reportBadgeHtml.textContent = item.temHtml ? 'HTML disponivel' : 'HTML indisponivel';
-    el.reportBadgeIndex.className = 'badge good';
-    el.reportBadgeIndex.textContent = `IGC ${Number(item.igc || 0).toFixed(1)}% | PCM ${Number(item.pcm || 0).toFixed(1)}%`;
-  }
-
-  function setActiveReportCard(reportId) {
-    const cards = el.reportList.querySelectorAll('.report-card');
-    cards.forEach((card) => {
-      card.classList.toggle('active', String(card.dataset.reportId) === String(reportId));
-    });
-  }
-
-  async function abrirRelatorio(id) {
-    const item = reportRecords.find((row) => String(row.id) === String(id));
-    if (!item) return;
-
-    selectedReportId = item.id;
-    setActiveReportCard(item.id);
-    updateReportHeader(item);
-    clearReportBlob();
-    setReportStatus('Carregando HTML do relatorio...', '');
-
-    try {
-      let html = htmlCache.get(String(item.id));
-      if (!html) {
-        html = await getText(`/api/admin/respostas/${item.id}/html`);
-        htmlCache.set(String(item.id), html);
-      }
-
-      el.reportFrame.srcdoc = html;
-      el.reportFrame.removeAttribute('src');
-      el.reportStatus.hidden = true;
-
-      currentReportBlobUrl = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=UTF-8' }));
-      el.btnAbrirHtml.href = currentReportBlobUrl;
-      el.btnAbrirHtml.hidden = false;
-    } catch (error) {
-      el.reportFrame.removeAttribute('srcdoc');
-      el.reportFrame.src = 'about:blank';
-      setReportStatus(`Nao foi possivel carregar o HTML: ${error.message}`, 'danger');
-    }
-  }
-
-  async function carregarRelatorios() {
-    const filtros = filtrosAtuais();
-    setReportStatus('Carregando relatorios...', '');
-
-    try {
-      const result = await getJSON('/api/admin/respostas', filtros);
-      if (!result || !result.success) {
-        throw new Error((result && result.error) || 'Falha ao carregar relatorios.');
-      }
-
-      const lista = result.data || [];
-      renderReportList(lista);
-
-      if (!lista.length) {
-        selectedReportId = null;
-        updateReportHeader(null);
-        clearReportBlob();
-        el.reportFrame.src = 'about:blank';
-        return;
-      }
-
-      const selecionado = lista.find((item) => String(item.id) === String(selectedReportId));
-      if (!selecionado) {
-        selectedReportId = null;
-        updateReportHeader(null);
-        clearReportBlob();
-        el.reportFrame.src = 'about:blank';
-        setReportStatus('Selecione um relatorio para carregar o HTML.', '');
-        return;
-      }
-
-      setActiveReportCard(selecionado.id);
-      updateReportHeader(selecionado);
-      const html = htmlCache.get(String(selecionado.id));
-      if (html) {
-        el.reportFrame.srcdoc = html;
-        el.reportFrame.removeAttribute('src');
-        el.reportStatus.hidden = true;
-        currentReportBlobUrl = URL.createObjectURL(new Blob([html], { type: 'text/html;charset=UTF-8' }));
-        el.btnAbrirHtml.href = currentReportBlobUrl;
-        el.btnAbrirHtml.hidden = false;
-      } else {
-        clearReportBlob();
-        el.reportFrame.src = 'about:blank';
-        setReportStatus('Selecione o relatorio novamente para recarregar o HTML.', '');
-      }
-    } catch (error) {
-      reportRecords = [];
-      el.reportList.hidden = true;
-      updateReportHeader(null);
-      clearReportBlob();
-      el.reportFrame.src = 'about:blank';
-      setReportStatus(`Erro ao carregar relatorios: ${error.message}`, 'danger');
-    }
-  }
-
   async function atualizarDashboard() {
     try {
       const filtros = filtrosAtuais();
@@ -653,10 +470,7 @@
   async function atualizarTudo() {
     await atualizarDashboard();
 
-    const resultados = await Promise.allSettled([
-      carregarFiltros(),
-      carregarRelatorios()
-    ]);
+    const resultados = await Promise.allSettled([carregarFiltros()]);
 
     resultados.forEach((resultado) => {
       if (resultado.status === 'rejected') {
@@ -670,28 +484,15 @@
       await atualizarTudo();
     });
 
-    el.btnAtualizarRelatorios.addEventListener('click', async () => {
-      await carregarRelatorios();
-    });
-
     [el.setor, el.produto, el.cidade, el.uf, el.dataInicio, el.dataFim].forEach((input) => {
       input.addEventListener('change', async () => {
         await atualizarDashboard();
-        await Promise.allSettled([
-          carregarFiltros(),
-          carregarRelatorios()
-        ]);
+        await Promise.allSettled([carregarFiltros()]);
       });
     });
 
     el.adminToken.addEventListener('input', () => {
       persistToken();
-    });
-
-    el.btnAbrirHtml.addEventListener('click', (event) => {
-      if (!currentReportBlobUrl) {
-        event.preventDefault();
-      }
     });
 
     el.autoRefresh.addEventListener('change', () => {
@@ -703,7 +504,6 @@
       if (el.autoRefresh.checked) {
         refreshTimer = setInterval(async () => {
           await atualizarDashboard();
-          await carregarRelatorios();
         }, 60000);
       }
     });
