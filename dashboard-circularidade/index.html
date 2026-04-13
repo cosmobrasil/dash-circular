@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard de Distrito Circular</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div>
+      <h1>Dashboard de Distrito Circular</h1>
+      <p class="subtitle">Painel consolidado da circularidade e preview do relatorio HTML gerado pelo formulario.</p>
+    </div>
+    <img src="./cosmob.png" alt="Logo CosmoBrasil" class="logo" />
+  </header>
+
+  <main class="container">
+    <section class="panel filters-panel">
+      <div class="section-head">
+        <div>
+          <h2>Filtros e acesso ao relatorio</h2>
+          <p class="section-copy">Os filtros valem para os indicadores e para a lista de relatorios HTML recentes.</p>
+        </div>
+      </div>
+      <div class="filters-grid">
+        <label>Setor
+          <select id="filtroSetor"><option value="">Todos</option></select>
+        </label>
+        <label>Produto
+          <select id="filtroProduto"><option value="">Todos</option></select>
+        </label>
+        <label>Cidade
+          <select id="filtroCidade"><option value="">Todas</option></select>
+        </label>
+        <label>UF
+          <select id="filtroUf"><option value="">Todas</option></select>
+        </label>
+        <label>Data inicio
+          <input id="filtroDataInicio" type="date" />
+        </label>
+        <label>Data fim
+          <input id="filtroDataFim" type="date" />
+        </label>
+      </div>
+      <div class="actions-row">
+        <div class="actions-group">
+          <button id="btnAtualizar">Atualizar painel</button>
+          <label class="refresh-label"><input id="autoRefresh" type="checkbox" /> Atualizacao automatica (60s)</label>
+        </div>
+        <label class="token-field">
+          <span>Token admin</span>
+          <input id="adminToken" type="password" placeholder="Opcional, se o backend exigir" />
+        </label>
+      </div>
+    </section>
+
+    <section class="kpis-grid">
+      <article class="kpi panel"><h3>Total de formularios</h3><p id="kpiTotal">-</p></article>
+      <article class="kpi panel"><h3>Media total de pontos</h3><p id="kpiPontos">-</p></article>
+      <article class="kpi panel"><h3>Media IGC</h3><p id="kpiIGC">-</p></article>
+      <article class="kpi panel"><h3>Media PCM</h3><p id="kpiPCM">-</p></article>
+    </section>
+
+    <section class="charts-grid">
+      <article class="panel chart-panel">
+        <h3>Percentual de pontos por topico</h3>
+        <canvas id="chartTopicos"></canvas>
+      </article>
+
+      <article class="panel chart-panel">
+        <h3>Indice Global de Circularidade (IGC)</h3>
+        <canvas id="chartIGC"></canvas>
+        <p class="tech-text">
+          O IGC sintetiza o quao circular e o modelo do produto, avaliando origem de materia-prima,
+          gestao de residuos, reciclabilidade, reparabilidade e reaproveitamento.
+        </p>
+      </article>
+
+      <article class="panel chart-panel">
+        <h3>Perfil de Circularidade de Materiais</h3>
+        <canvas id="chartPCM"></canvas>
+        <p class="tech-text">
+          Esse radar representa o perfil de circularidade dos materiais utilizados pela empresa.
+          Os 4 primeiros eixos vêm da Q1 - Entrada. Os 2 últimos condensam a Q3 - Saída do Produto.
+        </p>
+      </article>
+
+      <article class="panel chart-panel">
+        <h3>Indice de Circularidade do Produto</h3>
+        <canvas id="chartCircularidadeProduto"></canvas>
+        <p class="tech-text">
+          Visao dos cinco topicos principais: Entrada, Gestao de Residuos, Saida do Produto,
+          Vida do Produto e Monitoramento.
+        </p>
+      </article>
+    </section>
+
+    <section class="panel">
+      <h3>Pontos estrategicos de atencao</h3>
+      <div id="recomendacoes" class="recomendacoes-grid"></div>
+    </section>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
