@@ -291,12 +291,12 @@
       type: 'radar',
       data: {
         labels: [
-          'Durabilidade',
-          'Design reparavel',
-          'Design de reaproveitamento',
-          'Servicos no ciclo',
-          'Rastreabilidade',
-          'Transparencia'
+          'Matéria-prima virgem',
+          'Matéria-prima reciclada',
+          'Matéria-prima de reaproveitamento',
+          'Matéria-prima renovável',
+          'Desmontagem no fim de vida',
+          'Circularidade no fim de vida do produto'
         ],
         datasets: [{
           label: 'Dimensoes do PCM (%)',
